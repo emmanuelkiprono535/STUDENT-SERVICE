@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Marks Management System</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            background: #12336b;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #155eef;
+            color: white;
+        }
+
+        button:hover {
+            background: #12336b;
+        }
+
+        .delete {
+            background: #d92d20;
+            margin: 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            border: 1px solid #cccccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #12336b;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f4f7;
+        }
+
+        #message {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Student Marks Management System</h1>
+
+    <div class="container">
+        <h2>Enter Student Details</h2>
+
+        <form id="studentForm">
+            <label for="admission">Admission Number</label>
+            <input type="text" id="admission" required>
+
+            <label for="name">Student Name</label>
+            <input type="text" id="name" required>
+
+            <label for="className">Class</label>
+            <input type="text" id="className" required>
+
+            <label for="math">Mathematics (0–100)</label>
+            <input type="number" id="math" min="0" max="100" required>
+
+            <label for="english">English (0–100)</label>
+            <input type="number" id="english" min="0" max="100" required>
+
+            <label for="kiswahili">Kiswahili (0–100)</label>
+            <input type="number" id="kiswahili" min="0" max="100" required>
+
+            <label for="science">Science (0–100)</label>
+            <input type="number" id="science" min="0" max="100" required>
+
+            <button type="submit">Save Student Marks</button>
+            <button type="reset" style="background:#667085">Clear Form</button>
+        </form>
+
+        <p id="message"></p>
+
+        <h2>Student Results</h2>
+
+        <label for="search">Search by name or admission number</label>
+        <input type="text" id="search" placeholder="Type to search...">
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Admission No.</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Maths</th>
+                        <th>English</th>
+                        <th>Kiswahili</th>
+                        <th>Science</th>
+                        <th>Total</th>
+                        <th>Average</th>
+                        <th>Grade</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="results"></tbody>
+            </table>
+        </div>
+
+        <h3 id="summary">Total Students: 0</h3>
+
+        <button type="button" onclick="window.print()">
+            Print Results
+        </button>
+
+        <button type="button" onclick="exportCSV()">
+            Export to CSV
+        </button>
+    </div>
+
+    <script>
+        const form = document.getElementById("studentForm");
+        const results = document.getElementById("results");
+        const message = document.getElementById("message");
+
+        let students = JSON.parse(
+            localStorage.getItem("studentMarks") || "[]"
+        );
+
+        function calculateGrade(average) {
+            if (average >= 80) return "A";
+            if (average >= 70) return "B";
+            if (average >= 60) return "C";
+            if (average >= 50) return "D";
+            return "E";
+        }
+
+        function saveData() {
+            localStorage.setItem(
+                "studentMarks",
+                JSON.stringify(students)
+            );
+        }
+
+        function displayStudents() {
+            const search = document.getElementById("search")
+                .value.toLowerCase();
+
+            results.replaceChildren();
+
+            const filtered = students.filter(student =>
+                student.name.toLowerCase().includes(search) ||
+                student.admission.toLowerCase().includes(search)
+            );
+
+            filtered.forEach(student => {
+                const row = document.createElement("tr");
+
+                const values = [
+                    student.admission,
+                    student.name,
+                    student.className,
+                    student.math,
+                    student.english,
+                    student.kiswahili,
+                    student.science,
+                    student.total,
+                    student.average.toFixed(2),
+                    student.grade
+                ];
+
+                values.forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+
+                const actionCell = document.createElement("td");
+                const deleteButton = document.createElement("button");
+
+                deleteButton.textContent = "Delete";
+                deleteButton.className = "delete";
+
+                deleteButton.addEventListener("click", () => {
+                    if (confirm("Delete this student's record?")) {
+                        students = students.filter(item =>
+                            item.id !== student.id
+                        );
+
+                        saveData();
+                        displayStudents();
+                    }
+                });
+
+                actionCell.appendChild(deleteButton);
+                row.appendChild(actionCell);
+                results.appendChild(row);
+            });
+
+            document.getElementById("summary").textContent =
+                "Total Students: " + students.length;
+        }
+
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const admission = document.getElementById("admission")
+                .value.trim();
+
+            const name = document.getElementById("name")
+                .value.trim();
+
+            const className = document.getElementById("className")
+                .value.trim();
+
+            const math = Number(document.getElementById("math").value);
+            const english = Number(document.getElementById("english").value);
+            const kiswahili = Number(document.getElementById("kiswahili").value);
+            const science = Number(document.getElementById("science").value);
+
+            const marks = [math, english, kiswahili, science];
+
+            if (!admission || !name || !className) {
+                message.textContent = "Please fill in all student details.";
+                return;
+            }
+
+            if (marks.some(mark =>
+                !Number.isFinite(mark) || mark < 0 || mark > 100
+            )) {
+                message.textContent =
+                    "Every subject mark must be between 0 and 100.";
+                return;
+            }
+
+            if (students.some(student =>
+                student.admission.toLowerCase() === admission.toLowerCase()
+            )) {
+                message.textContent = "Admission number already exists.";
+                return;
+            }
+
+            const total = marks.reduce((sum, mark) => sum + mark, 0);
+            const average = total / marks.length;
+
+            const student = {
+                id: Date.now().toString() + Math.random().toString(16).slice(2),
+                admission,
+                name,
+                className,
+                math,
+                english,
+                kiswahili,
+                science,
+                total,
+                average,
+                grade: calculateGrade(average)
+            };
+
+            students.push(student);
+            saveData();
+            displayStudents();
+
+            form.reset();
+            message.textContent = "Student marks saved successfully!";
+        });
+
+        document.getElementById("search").addEventListener(
+            "input", displayStudents
+        );
+
+        function exportCSV() {
+            if (students.length === 0) {
+                alert("There are no student records to export.");
+                return;
+            }
+
+            const headings = [
+                "Admission", "Name", "Class", "Maths",
+                "English", "Kiswahili", "Science",
+                "Total", "Average", "Grade"
+            ];
+
+            const rows = students.map(student => [
+                student.admission,
+                student.name,
+                student.className,
+                student.math,
+                student.english,
+                student.kiswahili,
+                student.science,
+                student.total,
+                student.average.toFixed(2),
+                student.grade
+            ]);
+
+            const escapeCSV = value =>
+                '"' + String(value).replaceAll('"', '""') + '"';
+
+            const csv = [headings, ...rows]
+                .map(row => row.map(escapeCSV).join(","))
+                .join("\r\n");
+
+            const blob = new Blob(["\uFEFF" + csv], {
+                type: "text/csv;charset=utf-8;"
+            });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "student-marks.csv";
+            link.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        displayStudents();
+    </script>
+</body>
+</html>
